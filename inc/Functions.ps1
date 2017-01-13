@@ -30,7 +30,7 @@ function ExtractUpdates([string]$updates_dir) {
 	foreach ($updatepackage in $updatepackages) {
 		$package_path = Join-Path $updates_dir $updatepackage.name
 
-		
+
 		Write-Host "Extracting .cab from $package_path to $updates_dir"
 		Invoke-Expression "& 'expand' $package_path -f:* $updates_dir_msu"
 	}
@@ -40,7 +40,7 @@ function ExtractUpdates([string]$updates_dir) {
 
 function GetPackageNameFromFileName([string]$packageFileName){
 	if ($packageFileName -match 'KB\w*') {
-	    return $matches[0].toUpper()
+		return $matches[0].toUpper()
 	} else {
 		return $([System.IO.Path]::GetFileNameWithoutExtension($packageFileName).toUpper())
 	}
@@ -48,68 +48,68 @@ function GetPackageNameFromFileName([string]$packageFileName){
 
 
 
-function GetPackageInfo([string]$packageName, [string]$fileName ) {    
-    $packageInfo = @{}    
-    $shell = new-object -com shell.application
-    $zip = $shell.NameSpace($fileName)
-    $dstTmpDir = Join-Path $(Join-Path $(Join-Path $env:TMP "wimaging") "cab") $packageName
-    echo $dstTmpDir
-    
-    if (Test-Path $dstTmpDir) {
-      # Remove-Item $dstTmpDir -Recurse -Force
-    }
+function GetPackageInfo([string]$packageName, [string]$fileName ) {
+		$packageInfo = @{}
+		$shell = new-object -com shell.application
+		$zip = $shell.NameSpace($fileName)
+		$dstTmpDir = Join-Path $(Join-Path $(Join-Path $env:TMP "wimaging") "cab") $packageName
+		echo $dstTmpDir
 
-    foreach ($item in $zip.items()) {
-      New-Item -Path "$dstTmpDir" -Type directory -ErrorAction SilentlyContinue | Out-Null
-      if (!(Test-Path $(Join-Path $dstTmpDir $item.name))) {
-      	if ($item.name -contains "update.mum") {        
-        	$shell.NameSpace($dstTmpDir).CopyHere($item)
-        }
-      }
-    }
+		if (Test-Path $dstTmpDir) {
+			# Remove-Item $dstTmpDir -Recurse -Force
+		}
 
-    $updateMumFile = Join-Path $dstTmpDir "update.mum"
-    if (Test-Path $updateMumFile) {    
-      $xdoc = new-object System.Xml.XmlDocument
-      Write-Host "${packageName}: Loading info"
-      # $file = resolve-path($updateMumFile)
-      # $xdoc.load($file)      
-      #[xml] $xdoc = get-content ".\sample.xml"
-      $xdoc = [xml] (get-content $updateMumFile)      
-      $packageInfo.assemblyIdentityName = $xdoc.assembly.assemblyIdentity.name
-      $packageInfo.assemblyIdentityVersion = $xdoc.assembly.assemblyIdentity.version
-      $packageInfo.assemblyIdentityprocessorArchitecture = $xdoc.assembly.assemblyIdentity.processorArchitecture
-      $packageInfo.assemblyIdentitypublicKeyToken = $xdoc.assembly.assemblyIdentity.publicKeyToken      
+		foreach ($item in $zip.items()) {
+			New-Item -Path "$dstTmpDir" -Type directory -ErrorAction SilentlyContinue | Out-Null
+			if (!(Test-Path $(Join-Path $dstTmpDir $item.name))) {
+				if ($item.name -contains "update.mum") {
+					$shell.NameSpace($dstTmpDir).CopyHere($item)
+				}
+			}
+		}
 
-    } else {
-      Write-Host "${packageName}: No update.mum detected" -foregroundcolor magenta
-    	$packageInfo = $null
-    }
-    
-    return $packageInfo
+		$updateMumFile = Join-Path $dstTmpDir "update.mum"
+		if (Test-Path $updateMumFile) {
+			$xdoc = new-object System.Xml.XmlDocument
+			Write-Host "${packageName}: Loading info"
+			# $file = resolve-path($updateMumFile)
+			# $xdoc.load($file)
+			#[xml] $xdoc = get-content ".\sample.xml"
+			$xdoc = [xml] (get-content $updateMumFile)
+			$packageInfo.assemblyIdentityName = $xdoc.assembly.assemblyIdentity.name
+			$packageInfo.assemblyIdentityVersion = $xdoc.assembly.assemblyIdentity.version
+			$packageInfo.assemblyIdentityprocessorArchitecture = $xdoc.assembly.assemblyIdentity.processorArchitecture
+			$packageInfo.assemblyIdentitypublicKeyToken = $xdoc.assembly.assemblyIdentity.publicKeyToken
+
+		} else {
+			Write-Host "${packageName}: No update.mum detected" -foregroundcolor magenta
+			$packageInfo = $null
+		}
+
+		return $packageInfo
 }
 
-function InstallPackages([string]$updates_dir) {	
+function InstallPackages([string]$updates_dir) {
 	$updates_dir = $updates_dir.toLower()
-	
+
 	$packages = @()
 	Write-Host "Installing updates from $updates_dir."
-	
+
 	#Write-Host "Using dism Add-Package method on $updates_dir"
 	#Invoke-Expression "& '$dism' /image:$mount_dir /Add-Package /PackagePath:$updates_dir"
 
 	# TODO: Add xml parsing to remove bad kbs
 	# Disabled until xml will be valid. Until then use windows system image manager - add Packages
 	# CreateServicingUnattendXML $packages "${install}\unattend.xml"
-	
-	
+
+
 	# $updatepackages = Get-ChildItem $updates_dir | where {$_.extension -eq ".msu" -or $_.extension -eq ".cab" }
 	$updatepackages = Get-ChildItem $updates_dir | where {$_.extension -eq ".cab" -or $_.extension -eq ".msu" }
 	for($i=0; $i -le $updatepackages.Count -1; $i++) {
 		$packageFileName = $updatepackages[$i].name
-		
-		
-		if ((				
+
+
+		if ((
 			($packageFileName -notlike "*winpe-setup*") -and
 			($packageFileName -notlike "*KB2506143*") -and
 			($packageFileName -notlike "*KB2604521*") -and
@@ -117,14 +117,14 @@ function InstallPackages([string]$updates_dir) {
 			($packageFileName -notlike "*KB2496898*") -and
 			($packageFileName -notlike "*KB2533552*") -and
 			($packageFileName -notlike "*KB2604521*") -and
-			($packageFileName -notlike "*KB976932*") -and			
-			($packageFileName -notlike "*KB3008923*") -and	
+			($packageFileName -notlike "*KB976932*") -and
+			($packageFileName -notlike "*KB3008923*") -and
 			($packageFileName -notlike "*KB3003057*") -and
 			($packageFileName -notlike "*KB2726535*")
-			
+
 		) -and (
 			($packageFileName -notlike "*KB2726535*")
-		)) 
+		))
 
 
 		 {
@@ -133,15 +133,15 @@ function InstallPackages([string]$updates_dir) {
 			$packagePath = "$updates_dir\$packageFileName"
 
 			$packages += $packagePath
-			
+
 		} else {
 			Write-Host "${packageName}: Skipping (excluded)"
 		}
-	}	
-	
-	$packageFilteredDir = "${updates_dir}\filtered"	
+	}
+
+	$packageFilteredDir = "${updates_dir}\filtered"
 	if (!(Test-Path "$packageFilteredDir")) {
-		New-Item -Path "$packageFilteredDir" -Type directory -ErrorAction SilentlyContinue | Out-Null	
+		New-Item -Path "$packageFilteredDir" -Type directory -ErrorAction SilentlyContinue | Out-Null
 	}
 
 	Write-Host "Copying Filtered Updates"
@@ -149,15 +149,15 @@ function InstallPackages([string]$updates_dir) {
 		#Copy-File $package "$packageFilteredDir\"
 		Invoke-Expression "& '$dism' /image:$mount_dir /Add-Package /PackagePath:$package"
 	}
-	
- 	#Write-Host "Installing packages from $packageFilteredDir to $mount_dir"
+
+	#Write-Host "Installing packages from $packageFilteredDir to $mount_dir"
 	#Invoke-Expression "& '$dism' /image:$mount_dir /Add-Package /PackagePath:$packageFilteredDir"
 
 	####
 	# Write-Host "Using unattend.xml method to provide a list of packages with dependencies (probably doesn't work)"
 	# Invoke-Expression "& '$dism' /image:$mount_dir /Apply-Unattend:${install}\unattend.xml"
 	####
-	#Add packages to the WIM	
+	#Add packages to the WIM
 	return $lastexitcode
 }
 
@@ -175,7 +175,6 @@ function SafeUnmountWim ([string]$mount_dir) {
 		Write-Host "No errors found, committing changes"
 		UnmountWim $mount_dir
 		#PushWim $wim_file
-		
 	}
 }
 
@@ -184,7 +183,6 @@ function Copy-File([string]$src, [string]$dst) {
 }
 
 function UnmountWim([string]$mount_dir, [string]$commit_yn = "y") {
-	
 	if ($commit_yn -ne $null) {
 		$answer = $commit_yn
 	} else {
@@ -192,21 +190,19 @@ function UnmountWim([string]$mount_dir, [string]$commit_yn = "y") {
 			$answer = Read-Host "Commit? (y/n)"
 		}
 	}
-	
+
 	switch ($answer) {
-	
-	    "n" {
+			"n" {
 				Write-Host "Unmounting $mount_dir - discarding changes." -foregroundcolor magenta
 				Invoke-Expression "& '$dism' /unmount-wim /mountdir:$mount_dir /discard"
 			}
-	    "y" {
+			"y" {
 				Write-Host "Unmounting $mount_dir - commiting changes." -foregroundcolor green
 				Invoke-Expression "& '$dism' /unmount-wim /mountdir:$mount_dir /commit"
-				
 			}
 	}
 	Invoke-Expression "& '$dism' /cleanup-wim"
-	
+
 	if ($lastexitcode -ne 0) {
 		Write-Error "Error ${lastexitcode}"
 		exit $lastexitcode
@@ -218,19 +214,18 @@ function UnmountWim([string]$mount_dir, [string]$commit_yn = "y") {
 function MountWim([string]$wim_file, [string]$mount_dir, [string]$wim_image_name) {
 	#Command to mount the WIM
 	Write-Host "Mounting ${wim_file} to ${mount_dir}, Image: ${wim_image_name}. Boot image: ${boot}" -foregroundcolor "Magenta"
-	Invoke-Expression "& 'dism' /mount-wim /wimfile:$wim_file /mountdir:$mount_dir /name:'$wim_image_name'" 
+	Invoke-Expression "& '$dism' /mount-wim /wimfile:$wim_file /mountdir:$mount_dir /name:'$wim_image_name'"
 	if ($lastexitcode -ne 0) {
 		Write-Host "Error. Trying to Unmount current (no commit)" -foregroundcolor "Yellow"
 		UnmountWim $mount_dir "n"
 		#Write-Error "Error ${lastexitcode}"
 		#exit $lastexitcode
-		
 	}
 }
 
 function GetWimInfo([string]$wim_file) {
-	# Get Information using imagex	
-	Invoke-Expression "& '$imagex' /info $wim_file" 
+	# Get Information using imagex
+	Invoke-Expression "& '$imagex' /info $wim_file"
 	if ($lastexitcode -ne 0) {
 		Write-Error "Error ${lastexitcode}"
 		exit $lastexitcode
@@ -238,25 +233,25 @@ function GetWimInfo([string]$wim_file) {
 }
 
 function AddDrivers([string]$drivers_dir, [string]$mount_dir) {
-	
+
 	if (Test-Path -PathType Container $drivers_dir) {
 		#Command to mount the WIM
 		Write-Host "Adding Drivers" -foregroundcolor "yellow"
 		Write-Host "${drivers_dir} -> ${mount_dir}"
 		Invoke-Expression "& '$dism' /Image:$mount_dir /Add-Driver /Driver:$drivers_dir /Recurse"
 	}
-	
+
 }
 
 function AddFeatures([string]$mount_dir, [array]$features) {
 	if ($os -like "*-pe-*") {
 		Write-Error "No features in PE version. To add PE Features use AddUpdates"
-		
+
 
 	} else {
 		foreach($feature In $features) {
 			Write-Host "Adding feature $feature"
-		  	Invoke-Expression "& '$dism' /image:$mount_dir /Enable-Feature /FeatureName:'$feature' /all"
+				Invoke-Expression "& '$dism' /image:$mount_dir /Enable-Feature /FeatureName:'$feature' /all"
 		}
 	}
 }
@@ -265,23 +260,23 @@ function AddFeatures([string]$mount_dir, [array]$features) {
 function DelFeatures([string]$mount_dir, [array]$features) {
 	if ($os -like "*-pe-*") {
 		Write-Error "No features in PE version."
-		
+
 
 	} else {
 		foreach($feature In $features) {
 			Write-Host "Removing feature $feature"
-		  	Invoke-Expression "& '$dism' /image:$mount_dir /Disable-Feature /FeatureName:'$feature'"
+				Invoke-Expression "& '$dism' /image:$mount_dir /Disable-Feature /FeatureName:'$feature'"
 		}
 	}
 }
 
 function AddUpdates([string]$updates_dir, [string]$mount_dir, [string]$wim_image_name) {
 	Write-Host "Adding Updates" -foregroundcolor "yellow"
-	
+
 	if ($boot -eq $false) {
 		#Array to hold package locations
 		$package_path = @()
-		
+
 		if (Test-Path -PathType Container $sources\sources\sxs) {
 			Write-Host "Installing .Net 3.5 from $sources"
 			Invoke-Expression "& '$dism' /image:$mount_dir /Enable-Feature /FeatureName:NetFx3 /all /source:$sources\sources\sxs"
@@ -300,40 +295,40 @@ function AddUpdates([string]$updates_dir, [string]$mount_dir, [string]$wim_image
 		InstallPackages($updates_dir)
 	} else {
 		Write-Host "Processing the following packages:"
-		
+
 		<#
-		Write-Host "WinPE-Scripting.cab"		
+		Write-Host "WinPE-Scripting.cab"
 		$package_path += "/PackagePath:'${update_dir}\WinPE-Scripting.cab'"
-		
+
 		Write-Host "Adding WinPE-Setup.cab"
 		$package_path += "/PackagePath:'${update_dir}\WinPE-Setup.cab'"
-		
+
 		Write-Host "WinPE-Setup-Client.cab"
 		$package_path += "/PackagePath:'${update_dir}\WinPE-Setup-Client.cab'"
-		
+
 		Write-Host "WinPE-WMI.cab"
 		$package_path += "/PackagePath:'${update_dir}\WinPE-WMI.cab'"
-		
+
 		Write-Host "WinPE-NetFX4.cab"
-		$package_path += "/PackagePath:'${update_dir}\WinPE-NetFX4.cab'"		
-		
+		$package_path += "/PackagePath:'${update_dir}\WinPE-NetFX4.cab'"
+
 		Write-Host "WinPE-PowerShell3.cab"
-		$package_path += "/PackagePath:'${update_dir}\WinPE-PowerShell3.cab'"		 
-		
-		Write-Host "WinPE-DismCmdlets.cab"		
+		$package_path += "/PackagePath:'${update_dir}\WinPE-PowerShell3.cab'"
+
+		Write-Host "WinPE-DismCmdlets.cab"
 		$package_path += "/PackagePath:'${update_dir}\WinPE-DismCmdlets.cab'"
-		
+
 		Write-Host "WinPE-StorageWMI.cab"
-		$package_path += "/PackagePath:'${update_dir}\WinPE-StorageWMI.cab'"		
-		
+		$package_path += "/PackagePath:'${update_dir}\WinPE-StorageWMI.cab'"
+
 		# Language-Specific Packages
 		#$updatepackages = Get-ChildItem "$windows_adk_path\Windows Preinstallation Environment\amd64\WinPE_OCs\en-us" | where{$_.extension -eq ".msu" -or $_.extension -eq ".cab" }
 		#For($i=0; $i -le $updatepackages.Count -1; $i++)
 		#{
 		#	$package = $updatepackages[$i].name
-		#	$package_path += "/PackagePath:'$windows_adk_path\Windows Preinstallation Environment\amd64\WinPE_OCs\en-us\$package'"			
+		#	$package_path += "/PackagePath:'$windows_adk_path\Windows Preinstallation Environment\amd64\WinPE_OCs\en-us\$package'"
 		#}
-		
+
 		Write-Host "Adding PE Packages"
 		Invoke-Expression "& '$dism' /image:$mount_dir /Add-Package $package_path"
 		#>
@@ -342,7 +337,7 @@ function AddUpdates([string]$updates_dir, [string]$mount_dir, [string]$wim_image
 }
 
 function AddTools([string]$tools_dir, [string]$mount_dir) {
-	Write-Host "Adding Tools" -foregroundcolor "yellow"	
+	Write-Host "Adding Tools" -foregroundcolor "yellow"
 	if ( $(Get-ChildItem $mount_dir | Measure-Object).count -ne 0) {
 		Write-Host "Copying Tools from ${tools_dir} to ${mount_dir}"
 		Copy-Item $($tools_dir+"\*") $mount_dir -Recurse -Force
@@ -360,20 +355,20 @@ function AddTools([string]$tools_dir, [string]$mount_dir) {
 			Write-Host "Removing unattend.xml from C:\Windows\Panther"
 			Remove-Item "${mount_dir}\Windows\panther\unaddend.xml"
 		}
-		
+
 		if ($lastexitcode -ne 0) {
 			$msg = $Error[0].Exception.Message
 			Write-Error "Error $msg"
 
 			exit $lastexitcode
 		}
-	
+
 	if ($boot -eq $true) {
 		if (Get-Item  "${mount_dir}\setup.exe" -ea SilentlyContinue) {
 			Write-Host "Renaming setup.exe to setupx.exe, so the setup doesn't start without required parameters"
 			Rename-Item   "${mount_dir}\setup.exe"  "${mount_dir}\setupx.exe"
 		}
-		
+
 		if ($lastexitcode -ne 0) {
 			$msg = $Error[0].Exception.Message
 			Write-Error "Error $msg"
@@ -384,35 +379,34 @@ function AddTools([string]$tools_dir, [string]$mount_dir) {
 }
 
 function PushWim([string]$wim_file) {
-  if ($os -Like "*-pe*") {
-    $osdirs = Get-Item -Path "${script_path}\install\*" -Exclude "*-pe-*","*.template","*.md"
-    Write-Host "Pushing $wim_file to to all install dirs" -foregroundcolor "yellow"
-    foreach ($install_path in $osdirs) {
-      if (Test-Path -PathType Container $install_path) {
-        $install_boot_wim = "${install_path}\sources\boot.wim"
-        Write-Host "Pushing $wim_file to ${install_boot_wim}" -foregroundcolor "green"
-        Copy-Item $wim_file $install_boot_wim -Force -Recurse
-      }
-    }
-  }
-  else {
-    Write-Host "Pushing $wim_file to $wim_file_install" -foregroundcolor "green"
-    Copy-Item $wim_file $wim_file_install -Force -Recurse
-  }
+	if ($os -Like "*-pe*") {
+		$osdirs = Get-Item -Path "${script_path}\install\*" -Exclude "*-pe-*","*.template","*.md"
+		Write-Host "Pushing $wim_file to to all install dirs" -foregroundcolor "yellow"
+		foreach ($install_path in $osdirs) {
+			if (Test-Path -PathType Container $install_path) {
+				$install_boot_wim = "${install_path}\sources\boot.wim"
+				Write-Host "Pushing $wim_file to ${install_boot_wim}" -foregroundcolor "green"
+				Copy-Item $wim_file $install_boot_wim -Force -Recurse
+			}
+		}
+	}
+	else {
+		Write-Host "Pushing $wim_file to $wim_file_install" -foregroundcolor "green"
+		Copy-Item $wim_file $wim_file_install -Force -Recurse
+	}
 }
 
 function GetCapturedWim([string]$captured_wim,[string]$wim_file) {
 	Write-Host "Copying ${captured_wim} to $wim_file"
-	Copy-Item $captured_wim $wim_file -force	
+	Copy-Item $captured_wim $wim_file -force
 }
 
-function GetFeatures([string]$mount_dir) {	
+function GetFeatures([string]$mount_dir) {
 	Invoke-Expression "& '$dism' /Image:$mount_dir /Get-Features /Format:Table"
 	Invoke-Expression "& '$dism' /Image:$mount_dir /Get-Packages /Format:Table"
 }
 
 function MountUnmountWim([string]$wim_file, [string]$mount_dir, [string]$wim_image_name) {
-	
 	MountWim $wim_file $mount_dir $wim_image_name
 	Write-Host "Press any key to continue ..."
 	$x = $host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown")
@@ -420,7 +414,7 @@ function MountUnmountWim([string]$wim_file, [string]$mount_dir, [string]$wim_ima
 }
 
 
-function MountUnmountVHD([string]$vhd_file, [string]$c_drive_mount, [string]$system_reserved_mount) {	
+function MountUnmountVHD([string]$vhd_file, [string]$c_drive_mount, [string]$system_reserved_mount) {
 	MountVHD $vhd_file $c_drive_mount $system_reserved_mount
 	Write-Host "Make sure to reopen the other powershell console!"
 	Write-Host "Press any key to continue ..."
@@ -429,9 +423,9 @@ function MountUnmountVHD([string]$vhd_file, [string]$c_drive_mount, [string]$sys
 }
 
 
-function CaptureWim([string]$mount_disk, [string]$captured_wim, [string]$wim_image_name) {		
+function CaptureWim([string]$mount_disk, [string]$captured_wim, [string]$wim_image_name) {
 	Write-Host "Capturing to ${captured_wim}. Image name: ${wim_image_name}" -foregroundcolor magenta
-	Invoke-Expression "& '$imagex' /capture ${mount_disk}: ${captured_wim} '${wim_image_name}'"	
+	Invoke-Expression "& '$imagex' /capture ${mount_disk}: ${captured_wim} '${wim_image_name}'"
 	if ($lastexitcode -eq 0) {
 		Write-Host "Capturing successful" -foregroundcolor green
 	}
@@ -452,7 +446,7 @@ function AppendWim([string]$captured_wim, [string]$wim_file, [string]$wim_image_
 
 function BackupWorkWim([string]$wim_file) {
 	$wim_file_backup = "${wim_file}_$(Get-Date -format "MMddyyyyhhmm")"
-	Write-Host "Backing up ${wim_file} to ${wim_file_backup}"  
+	Write-Host "Backing up ${wim_file} to ${wim_file_backup}"
 	Copy-File $wim_file $wim_file_backup
 }
 
@@ -460,11 +454,11 @@ function BackupWorkWim([string]$wim_file) {
 # Since captured wims file names have dates, it is not really used
 function BackupCapturedWim([string]$captured_wim) {
 	$captured_wim_file_backup = "${captured_wim}_$(Get-Date -format "MMddyyyyhhmm")"
-	Write-Host "Backing up ${captured_wim} to ${captured_wim_file_backup}"  
+	Write-Host "Backing up ${captured_wim} to ${captured_wim_file_backup}"
 	Copy-File $captured_wim $captured_wim_file_backup
 }
 
-function SaveWim([string]$wim_file_install) {	
+function SaveWim([string]$wim_file_install) {
 	$file_name = $(Get-ChildItem $wim_file_install).Name
 	$wim_file_install_save = "${save_dir}\${file_name}_save_$(Get-Date -format "MMddyyyyhhmm")"
 	Write-Host "Saving current wim in install directory as working one. (${wim_file_install} -> ${wim_file_install_save})"
@@ -474,7 +468,7 @@ function SaveWim([string]$wim_file_install) {
 }
 
 function RevertWorkWim([string]$wim_file, [string]$init_yn)
-{		
+{
 	if ("y","n" -contains $init_yn) {
 		$answer = $init_yn
 	} else {
@@ -482,22 +476,22 @@ function RevertWorkWim([string]$wim_file, [string]$init_yn)
 			$answer = Read-Host "This is useful when you want to reset your working wim file to your latest release version.`nRevert ${wim_file} to ${wim_file_install}? (y/n)"
 		}
 	}
-	
-	switch ($answer) {	
-	    "n" {
+
+	switch ($answer) {
+			"n" {
 				Write-Host "Cancelling"
 				exit 1
 			}
-	    "y" {
+			"y" {
 				Write-Host "Reverting ${wim_file_install} to ${wim_file}."
 				Write-Host "This copies back your released wim file."
-				Copy-Item $wim_file_install $wim_file -force	
-				
+				Copy-Item $wim_file_install $wim_file -force
+
 			}
-	}	
+	}
 }
 
-function InitInstallSources([string]$init_yn) {	
+function InitInstallSources([string]$init_yn) {
 	if ("y","n" -contains $init_yn) {
 		$answer = $init_yn
 	} else {
@@ -506,16 +500,16 @@ function InitInstallSources([string]$init_yn) {
 			$answer = Read-Host "This will overwrite everything in ${install}.`nReally? (y/n)"
 		}
 	}
-	
-	switch ($answer) {	
-	    "n" {
+
+	switch ($answer) {
+			"n" {
 				Write-Host "Cancelling"
 				exit 1
 			}
-	    "y" {
+			"y" {
 				Write-Host "Initializing ${sources} to ${install}"
 				Copy-Item $(Join-Path $sources "\*") $install -Force -Recurse
-				Write-Host "Install directory for ${os} has been refreshed. Make sure to push latest images to it." -foreground "green"				
+				Write-Host "Install directory for ${os} has been refreshed. Make sure to push latest images to it." -foreground "green"
 			}
 	}
 
@@ -535,19 +529,19 @@ function InitWorkWim([string]$init_yn) {
 			$answer = Read-Host "This will overwrite ${wim_file} with the original ${wim_type}.wim.`nDo you really want this? (y/n)"
 		}
 	}
-	
-	switch ($answer) {	
-	    "n" {
+
+	switch ($answer) {
+			"n" {
 				Write-Host "Cancelling"
 				exit 1
 			}
-	    "y" {
+			"y" {
 				if (!(Test-Path "${script_path}\images\${os}\work")) {
-					New-Item -Path "${script_path}\images\${os}\work" -Type directory -ErrorAction SilentlyContinue | Out-Null	
+					New-Item -Path "${script_path}\images\${os}\work" -Type directory -ErrorAction SilentlyContinue | Out-Null
 				} else {
 					Write-Host "Found ${script_path}\images\${os}\work. Moving on."
 				}
-				
+
 				Write-Host "Initializing ${wim_file} from ${sources_wim_file}"
 				Copy-File $sources_wim_file $wim_file -Force
 				if ($lastexitcode -ne 0) {
@@ -557,12 +551,12 @@ function InitWorkWim([string]$init_yn) {
 				} else {
 					Write-Host "Current working wim file has been refreshed. Make sure to push latest images to it." -foreground "green"
 				}
-				
+
 			}
 	}
-	
-	
-	
+
+
+
 	## TODO: copy winpe.wim to boot.wim
 }
 
@@ -571,57 +565,56 @@ function GetWimBoot {
 }
 
 function GetZipFileContents ([string]$url, [string]$dst_dir, [array]$includes, [array]$excludes) {
-  
-  $filename = $url.Substring($url.LastIndexOf("/") + 1)
-  $tmp_filename=$(Join-Path $env:TEMP $filename)  
-  $tmp_dst_dir = Join-Path $(split-path $tmp_filename -parent) $([io.fileinfo] $tmp_filename | % basename)
-  
-  New-Item -Path "$tmp_dst_dir" -Type directory -ErrorAction SilentlyContinue | Out-Null
-  New-Item -Path "$dst_dir" -Type directory -ErrorAction SilentlyContinue | Out-Null
-	
+	$filename = $url.Substring($url.LastIndexOf("/") + 1)
+	$tmp_filename=$(Join-Path $env:TEMP $filename)
+	$tmp_dst_dir = Join-Path $(split-path $tmp_filename -parent) $([io.fileinfo] $tmp_filename | % basename)
+
+	New-Item -Path "$tmp_dst_dir" -Type directory -ErrorAction SilentlyContinue | Out-Null
+	New-Item -Path "$dst_dir" -Type directory -ErrorAction SilentlyContinue | Out-Null
+
 	Invoke-WebRequest $url -OutFile $tmp_filename
-  
-  
-  $shell = new-object -com shell.application
-  $zip = $shell.NameSpace($tmp_filename)
-  
-  GetZipFileItemsRecursive $zip.items()
+
+
+	$shell = new-object -com shell.application
+	$zip = $shell.NameSpace($tmp_filename)
+
+	GetZipFileItemsRecursive $zip.items()
 }
 
-function GetZipFileItemsRecursive { 
-  Param([object]$items) 
- 
-  foreach($item In $items) { 
-    if ($item.GetFolder -ne $Null) {
-      if ($excludes.count -gt 0) {
-        foreach($exclude in $excludes) {
-          $strItem = [string]$item.Name 
-          if ($strItem -ne "$exclude"){
-            GetZipFileItemsRecursive $item.GetFolder.items()
-          }
-        }
-      }
-    } 
+function GetZipFileItemsRecursive {
+	Param([object]$items)
+
+	foreach($item In $items) {
+		if ($item.GetFolder -ne $Null) {
+			if ($excludes.count -gt 0) {
+				foreach($exclude in $excludes) {
+					$strItem = [string]$item.Name
+					if ($strItem -ne "$exclude"){
+						GetZipFileItemsRecursive $item.GetFolder.items()
+					}
+				}
+			}
+		}
 
 
-    if ($includes.count -gt 0) {
-      foreach($include in $includes) {             
-        $strItem = [string]$item.Name 
-        if ($strItem -eq "$include") {
-          if ((Test-Path ($dst_dir + "\" + $strItem)) -eq $false) { 
-            Write-Host "Copied file : $strItem from zip-file: $tmp_filename to $dst_dir" 
-            $shell.NameSpace($dst_dir).CopyHere($item) 
-          } 
-          else { 
-            Write-Host "File: $strItem already exists in destination folder" 
-          } 
-        }
-      }
-    } else {        
-        $shell.Namespace($dst_dir).copyhere($item)
-    }
+		if ($includes.count -gt 0) {
+			foreach($include in $includes) {
+				$strItem = [string]$item.Name
+				if ($strItem -eq "$include") {
+					if ((Test-Path ($dst_dir + "\" + $strItem)) -eq $false) {
+						Write-Host "Copied file : $strItem from zip-file: $tmp_filename to $dst_dir"
+						$shell.NameSpace($dst_dir).CopyHere($item)
+					}
+					else {
+						Write-Host "File: $strItem already exists in destination folder"
+					}
+				}
+			}
+		} else {
+				$shell.Namespace($dst_dir).copyhere($item)
+		}
 
-  } 
+	}
 }
 
 
@@ -629,80 +622,80 @@ function GetZipFileItemsRecursive {
 
 function MountVHD([string]$vhd_file, [string]$c_drive_mount, [string]$system_reserved_mount) {
 	Write-Host "Mounting ${vhd_file} to ${c_drive_mount}" -foregroundcolor "magenta"
-  if (get-item $vhd_file) {
-#     $command = @"
-# select vdisk file='${vhd_file}'
-# attach vdisk
-# select partition 1
-# assign letter=${system_reserved_mount}
-# select partition 2
-# assign letter=${c_drive_mount}
-# "@
-$commands = @(
-	"select vdisk file='${vhd_file}'",
-	"attach vdisk",
-	"select partition 1",
-	"assign letter=${system_reserved_mount}",
-	"select partition 2",
-	"assign letter=${c_drive_mount}",
-	"rescan"
-	)
+	if (get-item $vhd_file) {
+		#     $command = @"
+		# select vdisk file='${vhd_file}'
+		# attach vdisk
+		# select partition 1
+		# assign letter=${system_reserved_mount}
+		# select partition 2
+		# assign letter=${c_drive_mount}
+		# "@
+		$commands = @(
+			"select vdisk file='${vhd_file}'",
+			"attach vdisk",
+			"select partition 1",
+			"assign letter=${system_reserved_mount}",
+			"select partition 2",
+			"assign letter=${c_drive_mount}",
+			"rescan"
+			)
 
 
-# $command = @"
-# select vdisk file='${vhd_file}'
-# 	attach vdisk
-# 	select partition 1
-# 	assign letter=${system_reserved_mount}
-# 	select partition 2
-# 	assign letter=${c_drive_mount}	
-# "@
-      Write-Host "Checking ${system_reserved_mount}"
-      #if (($(Test-Path -Path "${system_reserved_mount}:") -eq $true))
-      if (Get-PSDrive $system_reserved_mount -ea SilentlyContinue) {     
-         Write-Error "Disk letter ${system_reserved_mount} is already in use. Please choose another one" -foregroundcolor red
-         exit 1
-      } else {
-      		Write-Host "${system_reserved_mount} is available" -foregroundcolor green
-          Write-Host "Testing if ${c_drive_mount} is already used"
-          if (Get-PSDrive $c_drive_mount -ea SilentlyContinue) {         
-            Write-Error "Disk letter ${c_drive_mount} is already in use. Please choose another one" -foregroundcolor red
-            exit 1
-          } else {
-          	Write-Host "${c_drive_mount} is available" -foregroundcolor green		    		
-            Write-Host "Mounting ${vhd_file}."            
-            # ExecuteDiskPart $commands
+			# $command = @"
+			# select vdisk file='${vhd_file}'
+			# 	attach vdisk
+			# 	select partition 1
+			# 	assign letter=${system_reserved_mount}
+			# 	select partition 2
+			# 	assign letter=${c_drive_mount}
+			# "@
+			Write-Host "Checking ${system_reserved_mount}"
+			#if (($(Test-Path -Path "${system_reserved_mount}:") -eq $true))
+			if (Get-PSDrive $system_reserved_mount -ea SilentlyContinue) {
+				Write-Error "Disk letter ${system_reserved_mount} is already in use. Please choose another one" -foregroundcolor red
+				exit 1
+			} else {
+					Write-Host "${system_reserved_mount} is available" -foregroundcolor green
+					Write-Host "Testing if ${c_drive_mount} is already used"
+					if (Get-PSDrive $c_drive_mount -ea SilentlyContinue) {
+						Write-Error "Disk letter ${c_drive_mount} is already in use. Please choose another one" -foregroundcolor red
+						exit 1
+					} else {
+						Write-Host "${c_drive_mount} is available" -foregroundcolor green
+						Write-Host "Mounting ${vhd_file}."
+						# ExecuteDiskPart $commands
 
 
-      # Workaround for ps disk bug      
-            # $old = Get-WmiObject win32_logicaldisk
-            ExecuteDiskPart $commands | Out-Null
-      #       $new = Get-WmiObject win32_logicaldisk
-      #       $disk=(Compare-Object $old $new).InputObject
+						# Workaround for ps disk bug
+						# $old = Get-WmiObject win32_logicaldisk
+						ExecuteDiskPart $commands | Out-Null
+						#       $new = Get-WmiObject win32_logicaldisk
+						#       $disk=(Compare-Object $old $new).InputObject
 						# New-PSDrive -Name ($disk.Name)[0] -PSProvider FileSystem -Root "M"
 						# dir $disk.name
 
-      #       Write-Host "---"
-      #       Compare-Object $old $new
-      #       Write-Host "---"
-            $t = 0 
-            while (!(Get-PSDrive $c_drive_mount -ea SilentlyContinue)) {
-            	start-sleep -s 1
-            	$t +=1
-            	if ($t -eq 3) {break}
-            }
-          }
-        }
+						#       Write-Host "---"
+						#       Compare-Object $old $new
+						#       Write-Host "---"
+						$t = 0
+						while (!(Get-PSDrive $c_drive_mount -ea SilentlyContinue)) {
+							start-sleep -s 1
+							$t +=1
+							if ($t -eq 3) {break}
+						}
+					}
+				}
 		Write-Host "C:\ of the mounted image is available at ${c_drive_mount}." -foregroundcolor "green"
-    } else {
-        exit 1
-    }
+		} else {
+				exit 1
+		}
 }
 
 
 
 function UnmountVHD([string]$vhd_file) {
-    $command = 
+		$command =
 @"
 select vdisk file='${vhd_file}'
 detach vdisk
@@ -715,12 +708,11 @@ $commands = @(
 	"rescan"
 	)
 
-    Write-Host "Unmounting $vhd_file from ${c_drive_mount}."
-    ExecuteDiskPart $commands
+		Write-Host "Unmounting $vhd_file from ${c_drive_mount}."
+		ExecuteDiskPart $commands
 }
 
-function ExecuteDiskPart ([string[]]$Commands)
-{
+function ExecuteDiskPart ([string[]]$Commands) {
 	$tempFile=[System.IO.Path]::GetTempFileName()
 	$output=[System.IO.Path]::GetTempFileName()
 	$Commands | Out-File $tempFile -Encoding ascii
@@ -736,93 +728,93 @@ function ExecuteDiskPart ([string[]]$Commands)
 
 
 function CreateServicingUnattendXML {
-    param ($packages, [string]$filePath    
+		param ($packages, [string]$filePath
 )
-    
-    
 
-    # Create The Document
-    $XmlWriter = New-Object System.XMl.XmlTextWriter($filePath,([Text.Encoding]::Utf8))
- 
-    # Set The Formatting
-    $xmlWriter.Formatting = "Indented"
-    $xmlWriter.Indentation = "4"
- 
-    # Write the XML Decleration
-    $xmlWriter.WriteStartDocument()
- 
-    # Set the XSL
-    # $XSLPropText = "type='text/xsl' href='style.xsl'"
-    # $xmlWriter.WriteProcessingInstruction("xml-stylesheet", $XSLPropText)    
- 
-    # Write Root Element
-    $xmlWriter.WriteStartElement("unattend")
-    $xmlWriter.WriteAttributeString("xmlns","urn:schemas-microsoft-com:unattend")
-    
-    # Write the Document
-    $xmlWriter.WriteStartElement("servicing")
 
-    
+
+		# Create The Document
+		$XmlWriter = New-Object System.XMl.XmlTextWriter($filePath,([Text.Encoding]::Utf8))
+
+		# Set The Formatting
+		$xmlWriter.Formatting = "Indented"
+		$xmlWriter.Indentation = "4"
+
+		# Write the XML Decleration
+		$xmlWriter.WriteStartDocument()
+
+		# Set the XSL
+		# $XSLPropText = "type='text/xsl' href='style.xsl'"
+		# $xmlWriter.WriteProcessingInstruction("xml-stylesheet", $XSLPropText)
+
+		# Write Root Element
+		$xmlWriter.WriteStartElement("unattend")
+		$xmlWriter.WriteAttributeString("xmlns","urn:schemas-microsoft-com:unattend")
+
+		# Write the Document
+		$xmlWriter.WriteStartElement("servicing")
+
+
 		foreach ($key in @($packages.keys)) {
-		  $packageName = $packages[$key].name
-		  $packagePath = $packages[$key].path
-		  $packageInfo = $(GetPackageInfo $packageName $packagePath)
+			$packageName = $packages[$key].name
+			$packagePath = $packages[$key].path
+			$packageInfo = $(GetPackageInfo $packageName $packagePath)
 
-		  if ($packageInfo -eq $null) {
-		  	continue
-		  }
+			if ($packageInfo -eq $null) {
+				continue
+			}
 
-		  $packages[$key].assemblyIdentityName = $packageInfo.assemblyIdentityName
-		  $packages[$key].assemblyIdentityVersion = $packageInfo.assemblyIdentityVersion
-		  $packages[$key].assemblyIdentityprocessorArchitecture = $packageInfo.assemblyIdentityprocessorArchitecture
-		  $packages[$key].assemblyIdentitypublicKeyToken = $packageInfo.assemblyIdentitypublicKeyToken  
-		
-
-
-    
-      $packageKey = $key
-      $packageName = $packages[$key].name
-      $packagePath = $packages[$key].path
-      $assemblyIdentityName = $packages[$key].assemblyIdentityName
-      $assemblyIdentityVersion = $packages[$key].assemblyIdentityVersion
-      $assemblyIdentityprocessorArchitecture = $packages[$key].assemblyIdentityprocessorArchitecture
-      $assemblyIdentitypublicKeyToken = $packages[$key].assemblyIdentitypublicKeyToken
+			$packages[$key].assemblyIdentityName = $packageInfo.assemblyIdentityName
+			$packages[$key].assemblyIdentityVersion = $packageInfo.assemblyIdentityVersion
+			$packages[$key].assemblyIdentityprocessorArchitecture = $packageInfo.assemblyIdentityprocessorArchitecture
+			$packages[$key].assemblyIdentitypublicKeyToken = $packageInfo.assemblyIdentitypublicKeyToken
 
 
-      if ($assemblyIdentityVersion -ne $null) {
 
-	       # $packageName = $packages.IndexOf($package)
-	      $xmlWriter.WriteStartElement("package")
-		      $xmlWriter.WriteAttributeString("action","install")
-		      # $xmlWriter.WriteElement("s")
-		      
-	      	$xmlWriter.WriteStartElement("assemblyIdentity")
-			      $xmlWriter.WriteAttributeString("name","${assemblyIdentityName}")
-			      $xmlWriter.WriteAttributeString("version","${assemblyIdentityVersion}")
-			      $xmlWriter.WriteAttributeString("processorArchitecture","${assemblyIdentityprocessorArchitecture}")
-			      $xmlWriter.WriteAttributeString("publicKeyToken","${assemblyIdentitypublicKeyToken}")
-			      $xmlWriter.WriteAttributeString("language","neutral")
-		      $xmlWriter.WriteEndElement()
 
-		      $xmlWriter.WriteStartElement("source")
-		      	$xmlWriter.WriteAttributeString("location",$packagePath)	      
-	      	$xmlWriter.WriteEndElement()
-      	$xmlWriter.WriteEndElement()
-      }
-    }
+			$packageKey = $key
+			$packageName = $packages[$key].name
+			$packagePath = $packages[$key].path
+			$assemblyIdentityName = $packages[$key].assemblyIdentityName
+			$assemblyIdentityVersion = $packages[$key].assemblyIdentityVersion
+			$assemblyIdentityprocessorArchitecture = $packages[$key].assemblyIdentityprocessorArchitecture
+			$assemblyIdentitypublicKeyToken = $packages[$key].assemblyIdentitypublicKeyToken
 
-    $xmlWriter.WriteEndElement() # <-- Closing servicing
- 
-    # Write Close Tag for Root Element
-    $xmlWriter.WriteEndElement() # <-- Closing RootElement
- 
-    # End the XML Document
-    $xmlWriter.WriteEndDocument()
- 
-    # Finish The Document
-    $xmlWriter.Finalize
-    $xmlWriter.Flush()
-    $xmlWriter.Close()
+
+			if ($assemblyIdentityVersion -ne $null) {
+
+				 # $packageName = $packages.IndexOf($package)
+				$xmlWriter.WriteStartElement("package")
+					$xmlWriter.WriteAttributeString("action","install")
+					# $xmlWriter.WriteElement("s")
+
+					$xmlWriter.WriteStartElement("assemblyIdentity")
+						$xmlWriter.WriteAttributeString("name","${assemblyIdentityName}")
+						$xmlWriter.WriteAttributeString("version","${assemblyIdentityVersion}")
+						$xmlWriter.WriteAttributeString("processorArchitecture","${assemblyIdentityprocessorArchitecture}")
+						$xmlWriter.WriteAttributeString("publicKeyToken","${assemblyIdentitypublicKeyToken}")
+						$xmlWriter.WriteAttributeString("language","neutral")
+					$xmlWriter.WriteEndElement()
+
+					$xmlWriter.WriteStartElement("source")
+						$xmlWriter.WriteAttributeString("location",$packagePath)
+					$xmlWriter.WriteEndElement()
+				$xmlWriter.WriteEndElement()
+			}
+		}
+
+		$xmlWriter.WriteEndElement() # <-- Closing servicing
+
+		# Write Close Tag for Root Element
+		$xmlWriter.WriteEndElement() # <-- Closing RootElement
+
+		# End the XML Document
+		$xmlWriter.WriteEndDocument()
+
+		# Finish The Document
+		$xmlWriter.Finalize
+		$xmlWriter.Flush()
+		$xmlWriter.Close()
 }
 
 
@@ -837,7 +829,7 @@ function StartVM ([string]$os) {
 function StopVM ([string]$os) {
 	### if #$vbox_manage list runningvms|...
 	# [diagnostics.process]::start("$vbox_manage","controlvm ${os} acpipowerbutton").WaitForExit()
-	
+
 
 	Invoke-Expression "& '$vbox_manage' controlvm ${os} acpipowerbutton" | out-null
 
@@ -848,30 +840,28 @@ function StopVM ([string]$os) {
 		if ($lastexitcode -ne 0) {
 			Write-Host "Error stopping ${os}: ${lastexitcode}" -foregroundcolor red
 			# exit $lastexitcode
-		}		
+		}
 	}
 }
 
 function PrepareImage([string]$os) {
 	Write-Host "Please run c:\wimaging\image\10_start.cmd"
-	# Invoke-Expression "& '$vbox_manage' guestcontrol ${os} exec --image 'c:\wimaging\image\10_start' --username ${username} --password ${password} --wait-exit --wait-stdout" | out-null	 
+	# Invoke-Expression "& '$vbox_manage' guestcontrol ${os} exec --image 'c:\wimaging\image\10_start' --username ${username} --password ${password} --wait-exit --wait-stdout" | out-null
 }
 
 function CreateVM([string]$os) {
+	# VBoxManage createvm --name "io" --register
+	# VBoxManage modifyvm "io" --memory 512 --acpi on --boot1 dvd
+	# VBoxManage modifyvm "io" --nic1 bridged --bridgeadapter1 eth0
+	# VBoxManage modifyvm "io" --macaddress1 XXXXXXXXXXXX
+	# VBoxManage modifyvm "io" --ostype Debian
 
-# 	VBoxManage createvm --name "io" --register
-# VBoxManage modifyvm "io" --memory 512 --acpi on --boot1 dvd
-# VBoxManage modifyvm "io" --nic1 bridged --bridgeadapter1 eth0
-# VBoxManage modifyvm "io" --macaddress1 XXXXXXXXXXXX
-# VBoxManage modifyvm "io" --ostype Debian
+	# VBoxManage createhd --filename ./io.vdi --size 10000
+	# VBoxManage storagectl "io" --name "IDE Controller" --add ide
 
-# VBoxManage createhd --filename ./io.vdi --size 10000
-# VBoxManage storagectl "io" --name "IDE Controller" --add ide
+	# VBoxManage storageattach "io" --storagectl "IDE Controller"  \
+	#     --port 0 --device 0 --type hdd --medium ./io.vdi
 
-# VBoxManage storageattach "io" --storagectl "IDE Controller"  \
-#     --port 0 --device 0 --type hdd --medium ./io.vdi
-
-# VBoxManage storageattach "io" --storagectl "IDE Controller" \
-#     --port 1 --device 0 --type dvddrive --medium debian-6.0.2.1-i386-CD-1.iso
+	# VBoxManage storageattach "io" --storagectl "IDE Controller" \
+	#     --port 1 --device 0 --type dvddrive --medium debian-6.0.2.1-i386-CD-1.iso
 }
-
